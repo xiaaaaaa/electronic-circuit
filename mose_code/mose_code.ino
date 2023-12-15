@@ -36,6 +36,8 @@ int Q1_pass=0,Q2_pass=0,Q3_pass=0,Q4_pass=0,Q5_pass=0; //判斷是否將玩家�
 int Q1_correct,Q2_correct,Q3_correct,Q4_correct,Q5_correct;
 int buzzerState = 0;       // 蜂鳴器狀態（是否正在播放旋律）
 //int level=1;
+int x=0;
+int q1_check_correct=3,q2_check_correct=3,q3_check_correct=3,q4_check_correct=3,q5_check_correct=3;
 const char ssid[]     = "xia"; //ssid:網路名稱
 const char password[] = "lily0412"; //pasword：網路密碼
 //請修改為你自己的API Key，並將https改為http
@@ -254,11 +256,10 @@ void check_q1(){
     if (SerialBT.available()) {//判斷儲存格是否有字串
      value = SerialBT.readString();//讀值
      if(value == "ikea"){//正確
-      
+        q1_check_correct=1;
+        x=1;
         if(OLEDStatus==true) {//設定led
           showcongrat();
-          buzzerState = 1;
-          
           levelState = 2;
           delay(2000);
           if(Q1_pass==0){ //傳值
@@ -273,11 +274,10 @@ void check_q1(){
         
       }
       else{//錯誤
-        
+        q1_check_correct=0;
+        x=1;
         if(OLEDStatus==true) {
            showWrong();
-           //buzzerState = 0;
-           
            delay(2000);
            display.clearDisplay();
            if(Q1_pass==0){
@@ -300,10 +300,10 @@ void check_q2(){
     if (SerialBT.available()) {
      value = SerialBT.readString();
      if(value == "meiji"){//正確
+        q2_check_correct=1;
+        x=1;
         if(OLEDStatus==true) {
           showcongrat();
-          buzzerState = 1;
-          playMelody(1); // 根據按鈕狀態播放不同的旋律
           levelState = 3;
           delay(2000);
           if(Q2_pass==0){
@@ -315,10 +315,10 @@ void check_q2(){
         }
      }
      else{//錯誤
+        q2_check_correct=0;
+        x=1;
         if(OLEDStatus==true) {
           showWrong();
-          buzzerState = 0;
-          playMelody(0); // 根據按鈕狀態播放不同的旋律
           delay(2000);
           display.clearDisplay();
           if(Q2_pass==0){
@@ -339,10 +339,10 @@ void check_q3(){
     if (SerialBT.available()) {
      value = SerialBT.readString();
      if(value == "sus"){//正確
+        q3_check_correct=1;
+        x=1;
         if(OLEDStatus==true) {
           showcongrat();
-          buzzerState = 2;
-          playMelody(2); // 根據按鈕狀態播放不同的旋律
           levelState = 4;
           delay(2000);
           if(Q3_pass==0){
@@ -354,10 +354,10 @@ void check_q3(){
         }
      }
      else{//錯誤
+        q3_check_correct=0;
+        x=1;
         if(OLEDStatus==true) {
            showWrong();
-           buzzerState = 0;
-           playMelody(0); // 根據按鈕狀態播放不同的旋律
            delay(2000);
            display.clearDisplay();
            if(Q3_pass==0){
@@ -378,10 +378,10 @@ void check_q4(){
     if (SerialBT.available()) {
      value = SerialBT.readString();
      if(value == "gay"){//正確
+        q4_check_correct=1;
+        x=1;
         if(OLEDStatus==true) {
            showcongrat();
-           buzzerState = 1;
-           playMelody(1); // 根據按鈕狀態播放不同的旋律
            levelState = 5;
            delay(2000);
            if(Q4_pass==0){
@@ -393,10 +393,10 @@ void check_q4(){
         }
      }
      else{//錯誤
+        q4_check_correct=0;
+        x=1;
         if(OLEDStatus==true) {
            showWrong();
-           buzzerState = 0;
-           playMelody(0); // 根據按鈕狀態播放不同的旋律
            delay(2000);
            display.clearDisplay();
            if(Q4_pass==0){
@@ -417,10 +417,10 @@ void check_q5(){
     if (SerialBT.available()) {
      value = SerialBT.readString();
      if(value == "cloc"){//成功
+        q5_check_correct=1;
+        x=1;
         if(OLEDStatus==true) {
           showcongrat();
-          //buzzerState = 1;
-          playMelody(1); // 根據按鈕狀態播放不同的旋律
           levelState = 6;
           delay(2000);
           if(Q5_pass==0){
@@ -432,11 +432,10 @@ void check_q5(){
         }
       }
       else{//錯誤
-        
+        q5_check_correct=0;
+        x=1;
         if(OLEDStatus==true) {
            showWrong();
-           buzzerState = 0;
-           playMelody(0); // 根據按鈕狀態播放不同的旋律
            delay(2000);
            display.clearDisplay();
            if(Q5_pass==0){
@@ -647,8 +646,51 @@ void setup() {
 
 void loop(){
 //  playMelody(0);
-  playMelody(1);
-//  playMelody(2);
+  //playMelody(1);
+  //playMelody(2);
+  if(x==1){
+    if(q1_check_correct==0){
+      playMelody(0);
+      q1_check_correct=3;
+    }
+    else if(q1_check_correct==1){
+      playMelody(1);
+      q1_check_correct=3;
+    }
+    if(q2_check_correct==0){
+      playMelody(0);
+      q2_check_correct=3;
+    }
+    else if(q2_check_correct==1){
+      playMelody(1);
+      q2_check_correct=3;
+    }
+    if(q3_check_correct==0){
+      playMelody(0);
+      q3_check_correct=3;
+    }
+    else if(q3_check_correct==1){
+      playMelody(2);
+      q3_check_correct=3;
+    }
+    if(q4_check_correct==0){
+      playMelody(0);
+      q4_check_correct=3;
+    }
+    else if(q4_check_correct==1){
+      playMelody(1);
+      q4_check_correct=3;
+    }
+    if(q5_check_correct==0){
+      playMelody(0);
+      q5_check_correct=3;
+    }
+    else if(q5_check_correct==1){
+      playMelody(1);
+      q5_check_correct=3;
+    }
+    x=0;
+  }
   if(OLEDStatus==true) {
     if(welcomeState==0){//遊戲開始
       showWelcome();
@@ -679,4 +721,5 @@ void loop(){
       check_star();
     }
   }
+  x=0;
 }
