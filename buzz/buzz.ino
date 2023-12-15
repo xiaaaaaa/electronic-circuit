@@ -31,6 +31,11 @@ void playMelody(int melodyType) {
       melodySize = 10;
       noteDuration = 1000 / noteDurations2[thisNote];
     }
+    else if(melodyType == 2){
+      melody = melodySUS;
+      melodySize = 10;
+      noteDuration = 1000 / noteDurations3[thisNote];
+    }
 
     tone(BUZZER_PIN, melody[thisNote], noteDuration);
     int pauseBetweenNotes = noteDuration * 1.30;
