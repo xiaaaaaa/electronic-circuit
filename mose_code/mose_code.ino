@@ -1,6 +1,9 @@
 #include <BluetoothSerial.h> 
 #include <SPI.h>
 #include <Wire.h>
+#include <WiFi.h>
+#include <HTTPClient.h>
+#include <SimpleDHT.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #define SCREEN_WIDTH 128     //設定OLED螢幕的寬度像素
@@ -12,6 +15,7 @@
 #define DELTAY 2
 #define LOGO_HEIGHT   16
 #define LOGO_WIDTH    16
+#define BUZZER_PIN 12   // 蜂鳴器
 BluetoothSerial SerialBT; 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);     //OLED顯示器使用2C連線並宣告名為display物件
 bool OLEDStatus = true;
@@ -19,16 +23,23 @@ int welcomeState = 0;//welcome
 int levelState = 1;//LEVEL
 const int mose_code=15;
 const int change=16;
-const int btn=17;
-const int q1=26,q2=25,q3=33,q4=32,q5=27;
-const int Q1[12]={0,0,0,2,0,0,1,2,0,0,0,3};  //0短 1長 2換字母
+//const int btn=17;//led
+//const int q1=26,q2=25,q3=33,q4=32,q5=27;//led
+const int Q1[12]={0,0,2,1,0,1,2,0,2,0,1,3};//0短 1長 2換字母
 const int Q2[16]={1,1,2,0,2,0,0,2,0,1,1,1,2,0,0,3};
-const int Q3[12]={0,0,2,1,0,1,2,0,2,0,1,3};
+const int Q3[12]={0,0,0,2,0,0,1,2,0,0,0,3};  
 const int Q4[12]={1,1,0,2,0,1,2,1,0,1,1,3};
 const int Q5[19]={1,0,1,0,2,0,1,0,0,2,1,1,1,2,1,0,1,0,3};
 byte ps=1, ns=1;
 String value;
+int Q1_pass=0,Q2_pass=0,Q3_pass=0,Q4_pass=0,Q5_pass=0; //判斷是否將玩家是否答對的值傳到網路上
+int Q1_correct,Q2_correct,Q3_correct,Q4_correct,Q5_correct;
+int buzzerState = 0;       // 蜂鳴器狀態（是否正在播放旋律）
 //int level=1;
+const char ssid[]     = "xia"; //ssid:網路名稱
+const char password[] = "lily0412"; //pasword：網路密碼
+//請修改為你自己的API Key，並將https改為http
+String url = "http://api.thingspeak.com/update?api_key=KZ3GYLVMTSH5TTBO";
 
 /*恭*/
 static const unsigned char PROGMEM str_1[]={
@@ -110,45 +121,45 @@ void showWelcome(){
   display.display();            //顯示所設定的文字
 }
 void showLevel1(){
-  display.clearDisplay();       //清除緩衝區資料
-  display.setCursor(0,0);           //設定起始點位置(50,35)
-  display.setTextColor(WHITE);      //設定文字顏色為白色(亮點)
-  display.setTextSize(3);             //設定文字尺寸為2
-  display.println("Level 1");         //將"0.0"存入RAM
-  display.display();            //顯示所設定的文字
+  display.clearDisplay();       
+  display.setCursor(0,0);           
+  display.setTextColor(WHITE);      
+  display.setTextSize(3);             
+  display.println("Level 1");         
+  display.display();            
 }
 void showLevel2(){
-  display.clearDisplay();       //清除緩衝區資料
-  display.setCursor(0,0);           //設定起始點位置(50,35)
-  display.setTextColor(WHITE);      //設定文字顏色為白色(亮點)
-  display.setTextSize(3);             //設定文字尺寸為2
-  display.println("Level 2");         //將"0.0"存入RAM
-  display.display();            //顯示所設定的文字
+  display.clearDisplay();       
+  display.setCursor(0,0);           
+  display.setTextColor(WHITE);      
+  display.setTextSize(3);             
+  display.println("Level 2");         
+  display.display();            
 }
 
 void showLevel3(){
-  display.clearDisplay();       //清除緩衝區資料
-  display.setCursor(0,0);           //設定起始點位置(50,35)
-  display.setTextColor(WHITE);      //設定文字顏色為白色(亮點)
-  display.setTextSize(3);             //設定文字尺寸為2
-  display.println("Level 3");         //將"0.0"存入RAM
-  display.display();            //顯示所設定的文字
+  display.clearDisplay();      
+  display.setCursor(0,0);          
+  display.setTextColor(WHITE);      
+  display.setTextSize(3);             
+  display.println("Level 3");         
+  display.display();            
 }
 void showLevel4(){
-  display.clearDisplay();       //清除緩衝區資料
-  display.setCursor(0,0);           //設定起始點位置(50,35)
-  display.setTextColor(WHITE);      //設定文字顏色為白色(亮點)
-  display.setTextSize(3);             //設定文字尺寸為2
-  display.println("Level 4");         //將"0.0"存入RAM
-  display.display();            //顯示所設定的文字
+  display.clearDisplay();       
+  display.setCursor(0,0);           
+  display.setTextColor(WHITE);      
+  display.setTextSize(3);             
+  display.println("Level 4");        
+  display.display();            
 }
 void showLevel5(){
-  display.clearDisplay();       //清除緩衝區資料
-  display.setCursor(0,0);           //設定起始點位置(50,35)
-  display.setTextColor(WHITE);      //設定文字顏色為白色(亮點)
-  display.setTextSize(3);             //設定文字尺寸為2
-  display.println("Level 5");         //將"0.0"存入RAM
-  display.display();            //顯示所設定的文字
+  display.clearDisplay();       
+  display.setCursor(0,0);           
+  display.setTextColor(WHITE);     
+  display.setTextSize(3);             
+  display.println("Level 5");         
+  display.display();            
 }
 
 void showcongrat(){
@@ -242,20 +253,42 @@ void check_q1(){
   if(levelState==1){
     if (SerialBT.available()) {//判斷儲存格是否有字串
      value = SerialBT.readString();//讀值
-     if(value == "sus"){//正確
-        if(OLEDStatus==true) {
+     if(value == "ikea"){//正確
+      
+        if(OLEDStatus==true) {//設定led
           showcongrat();
+          buzzerState = 1;
+          
           levelState = 2;
-          delay(1000);
+          delay(2000);
+          if(Q1_pass==0){ //傳值
+            Q1_correct=1;
+            pass_value();
+            Q1_pass=1;
+          }
+          
         }
+        playMelody(1); // 根據按鈕狀態播放不同的旋律
+        loop();
+        
       }
       else{//錯誤
+        
         if(OLEDStatus==true) {
            showWrong();
-           delay(1000);
+           //buzzerState = 0;
+           
+           delay(2000);
            display.clearDisplay();
-           loop();
+           if(Q1_pass==0){
+            Q1_correct=0;
+            pass_value();
+            Q1_pass=1;
+          }
+           
         }
+        playMelody(0); // 根據按鈕狀態播放不同的旋律
+        loop();
       }
       Serial.flush();//清空目前儲存格內容
    }
@@ -269,15 +302,30 @@ void check_q2(){
      if(value == "meiji"){//正確
         if(OLEDStatus==true) {
           showcongrat();
+          buzzerState = 1;
+          playMelody(1); // 根據按鈕狀態播放不同的旋律
           levelState = 3;
-          delay(1000);
+          delay(2000);
+          if(Q2_pass==0){
+            Q2_correct=1;
+            pass_value();
+            Q2_pass=1;
+          }
+          loop();
         }
      }
      else{//錯誤
         if(OLEDStatus==true) {
           showWrong();
-          delay(1000);
+          buzzerState = 0;
+          playMelody(0); // 根據按鈕狀態播放不同的旋律
+          delay(2000);
           display.clearDisplay();
+          if(Q2_pass==0){
+            Q2_correct=0;
+            pass_value();
+            Q2_pass=1;
+          }
           loop();
         }
      }
@@ -290,18 +338,33 @@ void check_q3(){
   if(levelState==3){
     if (SerialBT.available()) {
      value = SerialBT.readString();
-     if(value == "ikea"){//正確
+     if(value == "sus"){//正確
         if(OLEDStatus==true) {
           showcongrat();
+          buzzerState = 2;
+          playMelody(2); // 根據按鈕狀態播放不同的旋律
           levelState = 4;
-          delay(1000);
+          delay(2000);
+          if(Q3_pass==0){
+            Q3_correct=1;
+            pass_value();
+            Q3_pass=1;
+          }
+          loop();
         }
      }
      else{//錯誤
         if(OLEDStatus==true) {
            showWrong();
-           delay(1000);
+           buzzerState = 0;
+           playMelody(0); // 根據按鈕狀態播放不同的旋律
+           delay(2000);
            display.clearDisplay();
+           if(Q3_pass==0){
+            Q3_correct=0;
+            pass_value();
+            Q3_pass=1;
+          }
            loop();
         }
      }
@@ -317,15 +380,30 @@ void check_q4(){
      if(value == "gay"){//正確
         if(OLEDStatus==true) {
            showcongrat();
+           buzzerState = 1;
+           playMelody(1); // 根據按鈕狀態播放不同的旋律
            levelState = 5;
-           delay(1000);
+           delay(2000);
+           if(Q4_pass==0){
+            Q4_correct=1;
+            pass_value();
+            Q4_pass=1;
+          }
+           loop();
         }
      }
      else{//錯誤
         if(OLEDStatus==true) {
            showWrong();
-           delay(1000);
+           buzzerState = 0;
+           playMelody(0); // 根據按鈕狀態播放不同的旋律
+           delay(2000);
            display.clearDisplay();
+           if(Q4_pass==0){
+            Q4_correct=0;
+            pass_value();
+            Q4_pass=1;
+          }
            loop();
         }
       }
@@ -341,15 +419,31 @@ void check_q5(){
      if(value == "cloc"){//成功
         if(OLEDStatus==true) {
           showcongrat();
+          //buzzerState = 1;
+          playMelody(1); // 根據按鈕狀態播放不同的旋律
           levelState = 6;
-          delay(1000);
+          delay(2000);
+          if(Q5_pass==0){
+            Q5_correct=1;
+            pass_value();
+            Q5_pass=1;
+          }
+          loop();
         }
       }
       else{//錯誤
+        
         if(OLEDStatus==true) {
            showWrong();
-           delay(1000);
+           buzzerState = 0;
+           playMelody(0); // 根據按鈕狀態播放不同的旋律
+           delay(2000);
            display.clearDisplay();
+           if(Q5_pass==0){
+            Q5_correct=0;
+            pass_value();
+            Q5_pass=1;
+          }
            loop();
         }
       }
@@ -367,8 +461,8 @@ void show_short(){
   check_q4();
   check_q5();
   //check_btn();
-  Serial.println("mose code:0"); 
-  Serial.println("==========");
+//  Serial.println("mose code:0"); 
+//  Serial.println("==========");
   for(int i=0; i<100; i=i+5){     //調整i的上限，調整亮度  //調整每次遞增的數值，0~上限越快到達，閃得速度越快
     analogWrite(mose_code,i);
     delay(10); //亮度遞增減時的間隔
@@ -387,8 +481,8 @@ void show_long(){
   check_q4();
   check_q5();
   //check_btn();
-  Serial.println("mose code:1"); 
-  Serial.println("==========");
+//  Serial.println("mose code:1"); 
+//  Serial.println("==========");
   for(int i=0; i<100; i=i+5){     //調整i的上限，調整亮度  //調整每次遞增的數值，0~上限越快到達，閃得速度越快
     analogWrite(mose_code,i);
     delay(10); //亮度遞增減時的間隔
@@ -402,11 +496,7 @@ void show_long(){
 }
 
 void change_letter(){
-  check_q1();
-  check_q2();
-  check_q3();
-  check_q4();
-  check_q5();
+  
   //check_btn();
   Serial.println("mose code:2"); 
   Serial.println("------------");  
@@ -419,6 +509,11 @@ void change_letter(){
     delay(10);
   }
   delay(500);
+  check_q1();
+  check_q2();
+  check_q3();
+  check_q4();
+  check_q5();
 }
 
 void show_mose_level(const int mose[]){
@@ -434,91 +529,126 @@ void show_mose_level(const int mose[]){
   }
 }
 
-//void light_level(){
-//  if(level==1){
-//    analogWrite(q1,150);
-//    analogWrite(q2,0);
-//    analogWrite(q3,0);
-//    analogWrite(q4,0);
-//    analogWrite(q5,0);
-//  }
-//  else if(level==2){
-//    analogWrite(q1,0);
-//    analogWrite(q2,150);
-//    analogWrite(q3,0);
-//    analogWrite(q4,0);
-//    analogWrite(q5,0);
-//  }
-//  else if(level==3){
-//    analogWrite(q1,0);
-//    analogWrite(q2,0);
-//    analogWrite(q3,150);
-//    analogWrite(q4,0);
-//    analogWrite(q5,0);
-//  }
-//  else if(level==4){
-//    analogWrite(q1,0);
-//    analogWrite(q2,0);
-//    analogWrite(q3,0);
-//    analogWrite(q4,150);
-//    analogWrite(q5,0);
-//  }
-//  else if(level==5){
-//    analogWrite(q1,0);
-//    analogWrite(q2,0);
-//    analogWrite(q3,0);
-//    analogWrite(q4,0);
-//    analogWrite(q5,150);
-//  }
-//}
 
-//void check_btn(){
-//  light_level();
-//  ns=digitalRead(btn);
-//  if(ns==0&&ps==1){
-//    if(level==5){
-//      level=1;
-//    }
-//    else{
-//      level++;
-//    } 
-//  }
-//  Serial.print("level:");
-//  Serial.print(level);
-//  Serial.print(" //ps：");
-//  Serial.print(ps);
-//  Serial.print(" ns:");
-//  Serial.print(ns);
-//  Serial.println(" ");
-//  
-//  //delay(1000);
-//  ps=ns; 
-//}
+//------------------------------------------------------
+void pass_value(){
+  //開始傳送到thingspeak
+  String url1;
+  //Serial.println("啟動網頁連線");
+  HTTPClient http;
+  //將溫度及濕度以http get參數方式補入網址後方
+  if(levelState==1){
+    url1 = url + "&field1=" + (int)Q1_correct;
+  }
+  else if(levelState==2){
+    url1 = url + "&field2=" + (int)Q2_correct;
+  }
+  else if(levelState==3){
+    url1 = url + "&field3=" + (int)Q3_correct;
+  }
+  else if(levelState==4){
+    url1 = url + "&field4=" + (int)Q4_correct;
+  }
+  else if(levelState==5){
+    url1 = url + "&field5=" + (int)Q5_correct;
+  }
+  
+  //http client取得網頁內容
+  http.begin(url1);
+  int httpCode = http.GET();
+  if (httpCode == HTTP_CODE_OK)      {
+    //讀取網頁內容到payload
+    String payload = http.getString();
+    //將內容顯示出來
+    Serial.print("網頁內容=");
+    Serial.println(payload);
+  } else {
+    //讀取失敗
+    Serial.println("網路傳送失敗");
+  }
+  http.end();
+}
+
+//melody part-----------------------------------
+void playMelody(int melodyType) {
+  int melodyT[] = {1047, 784, 784, 880, 784, 988, 1047};     //答對旋律(7)
+  int noteDurations1[] = {4, 8, 8, 4, 2, 4, 4}; 
+  int melodyF[] = {698, 1245, 1245, 1245, 1175, 1047, 932, 698, 698, 466};     //答錯旋律FD# D#D# D c A#F FA#(10)
+  int noteDurations2[] = {8, 4, 8, 4, 4, 4, 8, 4, 8, 4}; 
+  int melodySUS[] = {880, 1047, 1175, 1245, 1175, 1047, 880, 784, 988, 880};     //SUS旋律(10)
+  int noteDurations3[] = {4, 4, 4, 4, 4, 4, 2, 8, 8, 4}; 
+  int melodySize;
+
+  // 播放旋律
+  for (int thisNote = 0; thisNote < melodySize; thisNote++) {
+    int noteDuration;
+    int* melody;
+
+    if (melodyType == 0) {
+      melody = melodyF;
+      melodySize = 10;
+      noteDuration = 1000 / noteDurations2[thisNote];
+    } 
+    else if (melodyType == 1) {
+      melody = melodyT;
+      melodySize = 7;
+      noteDuration = 1000 / noteDurations1[thisNote];
+    }
+    else if(melodyType == 2){
+      melody = melodySUS;
+      melodySize = 10;
+      noteDuration = 1000 / noteDurations3[thisNote];
+    }
+
+    tone(BUZZER_PIN, melody[thisNote], noteDuration);
+    int pauseBetweenNotes = noteDuration * 1.30;
+    delay(pauseBetweenNotes);
+    noTone(BUZZER_PIN);
+  }
+}
+
 
 //===============================================
 void setup() {
   //mose part
   //Serial.begin(9600);
+  // pinMode(btn,INPUT_PULLUP);
+  // pinMode(q1,OUTPUT);
+  // pinMode(q2,OUTPUT);
+  // pinMode(q3,OUTPUT);
+  // pinMode(q4,OUTPUT);
+  // pinMode(q5,OUTPUT);
   pinMode(mose_code,OUTPUT);
   pinMode(change,OUTPUT);
-  pinMode(btn,INPUT_PULLUP);
-  pinMode(q1,OUTPUT);
-  pinMode(q2,OUTPUT);
-  pinMode(q3,OUTPUT);
-  pinMode(q4,OUTPUT);
-  pinMode(q5,OUTPUT);
 
   //led part
   Serial.begin(115200);
   SerialBT.begin("ESP32_BT_mose");//更改為設定的藍牙顯示名稱
   if(!display.begin(SSD1306_SWITCHCAPVCC,0x3c)) {        //設定位址為 0x3c
-    Serial.println(F("SSD1306 allocation falled"));        //F(字串):將字串儲存在fash並非在RAM
+    //Serial.println(F("SSD1306 allocation falled"));        //F(字串):將字串儲存在fash並非在RAM
     OLEDStatus = false;                  //開啟OLED失敗
   }
+
+  //melody part
+  pinMode(BUZZER_PIN, OUTPUT); // 設置蜂鳴器接腳為輸出模式
+
+  //wifi part
+  Serial.begin(115200);
+  Serial.print("開始連線到無線網路SSID:");
+  Serial.println(ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    //Serial.print(".");
+    delay(1000);
+  }
+  Serial.println("連線完成");  
 }
 
 void loop(){
-  
+//  playMelody(0);
+  playMelody(1);
+//  playMelody(2);
   if(OLEDStatus==true) {
     if(welcomeState==0){//遊戲開始
       showWelcome();
@@ -526,8 +656,8 @@ void loop(){
       welcomeState = 1;
     }
     if(levelState==1){
-      showLevel1();
-      show_mose_level(Q1);
+      showLevel1(); //led
+      show_mose_level(Q1); //mose
     }
     else if(levelState==2){
       showLevel2();
