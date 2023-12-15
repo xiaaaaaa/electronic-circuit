@@ -21,12 +21,12 @@ void playMelody(int melodyType) {
     int noteDuration;
     int* melody;
 
-    if (melodyType == 0) {
+    if (melodyType == 1) {
       melody = melodyT;
       melodySize = 7;
       noteDuration = 1000 / noteDurations1[thisNote];
     } 
-    else if (melodyType == 1) {
+    else if (melodyType == 0) {
       melody = melodyF;
       melodySize = 10;
       noteDuration = 1000 / noteDurations2[thisNote];
