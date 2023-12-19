@@ -33,7 +33,7 @@ const int Q5[19]={1,0,1,0,2,0,1,0,0,2,1,1,1,2,1,0,1,0,3};
 byte ps=1, ns=1;
 String value;
 int Q1_pass=0,Q2_pass=0,Q3_pass=0,Q4_pass=0,Q5_pass=0; //判斷是否將玩家是否答對的值傳到網路上
-int Q1_correct,Q2_correct,Q3_correct,Q4_correct,Q5_correct;
+int Q1_correct=2,Q2_correct=2,Q3_correct=2,Q4_correct=2,Q5_correct=2;
 int buzzerState = 0;       // 蜂鳴器狀態（是否正在播放旋律）
 //int level=1;
 int x=0;
@@ -260,14 +260,14 @@ void check_q1(){
         x=1;
         if(OLEDStatus==true) {//設定led
           showcongrat();
-          levelState = 2;
+          
           delay(2000);
           if(Q1_pass==0){ //傳值
             Q1_correct=1;
             pass_value();
             Q1_pass=1;
           }
-          
+          levelState = 2;
         }
         playMelody(1); // 根據按鈕狀態播放不同的旋律
         loop();
@@ -304,13 +304,14 @@ void check_q2(){
         x=1;
         if(OLEDStatus==true) {
           showcongrat();
-          levelState = 3;
+          
           delay(2000);
           if(Q2_pass==0){
             Q2_correct=1;
             pass_value();
             Q2_pass=1;
           }
+          levelState = 3;
           loop();
         }
      }
@@ -343,13 +344,14 @@ void check_q3(){
         x=1;
         if(OLEDStatus==true) {
           showcongrat();
-          levelState = 4;
+          
           delay(2000);
           if(Q3_pass==0){
             Q3_correct=1;
             pass_value();
             Q3_pass=1;
           }
+          levelState = 4;
           loop();
         }
      }
@@ -382,13 +384,14 @@ void check_q4(){
         x=1;
         if(OLEDStatus==true) {
            showcongrat();
-           levelState = 5;
+           
            delay(2000);
            if(Q4_pass==0){
             Q4_correct=1;
             pass_value();
             Q4_pass=1;
           }
+          levelState = 5;
            loop();
         }
      }
@@ -421,13 +424,14 @@ void check_q5(){
         x=1;
         if(OLEDStatus==true) {
           showcongrat();
-          levelState = 6;
+          
           delay(2000);
           if(Q5_pass==0){
             Q5_correct=1;
             pass_value();
             Q5_pass=1;
           }
+          levelState = 6;
           loop();
         }
       }
@@ -535,7 +539,7 @@ void pass_value(){
   String url1;
   //Serial.println("啟動網頁連線");
   HTTPClient http;
-  //將溫度及濕度以http get參數方式補入網址後方
+ 
   if(levelState==1){
     url1 = url + "&field1=" + (int)Q1_correct;
   }
